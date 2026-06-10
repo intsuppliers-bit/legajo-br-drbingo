@@ -1762,7 +1762,7 @@ async function generatePDF() {
   // ── Section bar (orange) ──
   function secBar(title) {
     check(10);
-    doc.setFillColor(255,69,0); doc.rect(ML,y,cw,7,'F');
+    doc.setFillColor(124,58,237); doc.rect(ML,y,cw,7,'F');
     sf(8,true,255,255,255); doc.text(title, ML+3, y+5);
     y+=9;
   }
@@ -1778,7 +1778,7 @@ async function generatePDF() {
   // ── Orange sub-header (avaliação) ──
   function orangeSubBar(title) {
     check(7);
-    doc.setFillColor(255,69,0); doc.rect(ML,y,cw,6,'F');
+    doc.setFillColor(124,58,237); doc.rect(ML,y,cw,6,'F');
     sf(7,true,255,255,255); doc.text(title.toUpperCase(), ML+cw/2, y+4.2, {align:'center'});
     y+=6;
   }
@@ -1964,7 +1964,7 @@ async function generatePDF() {
   sep();
 
   // — Cliente —
-  doc.setFillColor(255,69,0); doc.rect(ML,y,cw,6.5,'F');
+  doc.setFillColor(124,58,237); doc.rect(ML,y,cw,6.5,'F');
   sf(8,true,255,255,255); doc.text('Informações do Cliente',ML+cw/2,y+4.5,{align:'center'}); y+=6.5;
 
   row2('Sobrenome',v('sobrenome'),'Nome',v('nome'));
@@ -2031,7 +2031,7 @@ async function generatePDF() {
       doc.roundedRect(ML, y, cw, h - 1, 1, 1, 'F');
 
       // Left accent bar
-      doc.setFillColor(255, 69, 0);
+      doc.setFillColor(124, 58, 237);
       doc.rect(ML, y, 2, h - 1, 'F');
 
       // Paragraph text — starts right after the accent bar with small padding
