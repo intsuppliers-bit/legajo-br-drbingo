@@ -770,6 +770,33 @@ body{background:var(--bg);color:var(--ink);font-family:'Barlow',sans-serif;font-
     </div>
   </div>
 
+  <div class="card">
+    <div class="card-title">Atividade em Outras Plataformas</div>
+    <div class="inline-alert info">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#3B82F6" stroke-width="1.5"/><path d="M9 8v5M9 6h.01" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Os fundamentos e o texto narrativo deste legajo referem-se à atividade do cliente registrada na plataforma <strong>Dr. Bingo</strong>. Utilize o campo abaixo apenas para registrar, de forma complementar, eventual atividade do mesmo cliente na plataforma BetWarrior.</span>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label>O cliente também possui atividade na plataforma BetWarrior?</label>
+      <div class="radio-group">
+        <div class="radio-opt"><input type="radio" name="bw_ativ" id="bw_ativ_no" value="no" checked onchange="toggleBetwarriorAtividade()"><label for="bw_ativ_no">Não</label></div>
+        <div class="radio-opt"><input type="radio" name="bw_ativ" id="bw_ativ_si" value="si" onchange="toggleBetwarriorAtividade()"><label for="bw_ativ_si">Sim</label></div>
+      </div>
+    </div>
+    <div id="betwarrior-ativ-fields" style="display:none">
+      <div class="grid-2">
+        <div class="field">
+          <label>Total de transações na plataforma BetWarrior</label>
+          <input type="number" id="bw_total_trans" min="0" placeholder="Ex: 128" onchange="updateBetwarriorNarrative()">
+        </div>
+        <div class="field">
+          <label>Data de cadastro na plataforma BetWarrior</label>
+          <input type="date" id="bw_data_cadastro" onchange="updateBetwarriorNarrative()">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card" id="card-narrativa" style="display:none">
     <div class="card-title">Texto Narrativo — Seção 5 do Memo</div>
     <div class="inline-alert info">
@@ -1481,6 +1508,7 @@ function onTipoCasoChange() {
   texto = substituteFields(texto);
   texto = enrichNarrativeWithPdf(texto);
   ta.value = texto;
+  updateBetwarriorNarrative();
 }
 
 function substituteFields(texto) {
@@ -1612,6 +1640,54 @@ function resubstituteNarrative() {
     ta.value = ta.value
       .replace(/\[DATA_FIM\]/g, fim);
   }
+}
+
+function toggleBetwarriorAtividade(){
+  const val = document.querySelector('input[name="bw_ativ"]:checked');
+  const show = val && val.value === 'si';
+  document.getElementById('betwarrior-ativ-fields').style.display = show ? 'block' : 'none';
+  if (!show) {
+    // Clear fields when toggled back to "Não" so stale data isn't reused later
+    const tt = document.getElementById('bw_total_trans'); if (tt) tt.value = '';
+    const dc = document.getElementById('bw_data_cadastro'); if (dc) dc.value = '';
+  }
+  updateBetwarriorNarrative();
+}
+
+function buildBetwarriorSentence(){
+  const val = document.querySelector('input[name="bw_ativ"]:checked');
+  if (!val) return null;
+
+  if (val.value === 'no') {
+    return 'O cliente não registra atividade na plataforma BetWarrior.';
+  }
+
+  const totalRaw = document.getElementById('bw_total_trans').value;
+  const dataRaw = document.getElementById('bw_data_cadastro').value;
+  if (!totalRaw && !dataRaw) return null;
+
+  const totalStr = totalRaw ? parseInt(totalRaw, 10).toLocaleString('pt-BR') : '[TOTAL DE TRANSAÇÕES]';
+  let dataStr = '[DATA DE CADASTRO]';
+  if (dataRaw) {
+    const [y, m, d] = dataRaw.split('-');
+    dataStr = `${d}/${m}/${y}`;
+  }
+
+  return `Adicionalmente, verificou-se que o cliente também possui atividade na plataforma BetWarrior, com cadastro realizado em ${dataStr} e um total de ${totalStr} transações registradas naquela plataforma.`;
+}
+
+// Injects/refreshes the BetWarrior sentence (either variant) as an extra paragraph
+// in the narrative, without disturbing manual edits made elsewhere in the text.
+function updateBetwarriorNarrative(){
+  const ta = document.getElementById('texto_narrativo');
+  if (!ta) return;
+  const marker = /\n*(Adicionalmente, verificou-se que o cliente também possui atividade na plataforma BetWarrior[^\n]*\.?|O cliente não registra atividade na plataforma BetWarrior\.?)/g;
+  let texto = ta.value.replace(marker, '');
+  const sentence = buildBetwarriorSentence();
+  if (sentence) {
+    texto = texto.replace(/\s+$/, '') + '\n\n' + sentence;
+  }
+  ta.value = texto;
 }
 
 function toggleReportePrevio(){const val=document.querySelector('input[name="rep_previo"]:checked');const show=val&&val.value==='si';document.getElementById('reporte-previo-fields').style.display=show?'block':'none';if(show&&document.querySelectorAll('.reporte-entry').length===0)addReportePrevio();}
