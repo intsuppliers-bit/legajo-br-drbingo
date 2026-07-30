@@ -1509,6 +1509,7 @@ function onTipoCasoChange() {
   texto = enrichNarrativeWithPdf(texto);
   ta.value = texto;
   updateBetwarriorNarrative();
+  updateReportePrevioNarrative();
 }
 
 function substituteFields(texto) {
@@ -1690,11 +1691,44 @@ function updateBetwarriorNarrative(){
   ta.value = texto;
 }
 
-function toggleReportePrevio(){const val=document.querySelector('input[name="rep_previo"]:checked');const show=val&&val.value==='si';document.getElementById('reporte-previo-fields').style.display=show?'block':'none';if(show&&document.querySelectorAll('.reporte-entry').length===0)addReportePrevio();}
+function toggleReportePrevio(){const val=document.querySelector('input[name="rep_previo"]:checked');const show=val&&val.value==='si';document.getElementById('reporte-previo-fields').style.display=show?'block':'none';if(show&&document.querySelectorAll('.reporte-entry').length===0)addReportePrevio();updateReportePrevioNarrative();}
 let _rpCount=0;
-function addReportePrevio(){_rpCount++;const n=_rpCount;const list=document.getElementById('reportes-previos-list');const div=document.createElement('div');div.className='reporte-entry';div.id='rp-entry-'+n;div.innerHTML=`<div class="entry-header"><span class="entry-num">Reporte Prévio #${n}</span><button type="button" class="btn-remove-entry" onclick="removeReportePrevio(${n})" title="Remover">✕</button></div><div class="grid-2"><div class="field"><label>Número de Origem (ID interno)</label><input type="text" id="num_origem_${n}" placeholder="Ex: TGBR-154-2026"></div><div class="field"><label>Número COAF da Comunicação</label><input type="text" id="num_coaf_${n}" placeholder="Ex: 67923910"></div><div class="field"><label>Período Reportado</label><input type="text" id="periodo_rp_${n}" placeholder="Ex: Março 2026"></div></div>`;list.appendChild(div);}
-function removeReportePrevio(n){const el=document.getElementById('rp-entry-'+n);if(el)el.remove();}
+function addReportePrevio(){_rpCount++;const n=_rpCount;const list=document.getElementById('reportes-previos-list');const div=document.createElement('div');div.className='reporte-entry';div.id='rp-entry-'+n;div.innerHTML=`<div class="entry-header"><span class="entry-num">Reporte Prévio #${n}</span><button type="button" class="btn-remove-entry" onclick="removeReportePrevio(${n})" title="Remover">✕</button></div><div class="grid-2"><div class="field"><label>Número de Origem (ID interno)</label><input type="text" id="num_origem_${n}" placeholder="Ex: TGBR-154-2026" onchange="updateReportePrevioNarrative()"></div><div class="field"><label>Número COAF da Comunicação</label><input type="text" id="num_coaf_${n}" placeholder="Ex: 67923910" onchange="updateReportePrevioNarrative()"></div><div class="field"><label>Período Reportado</label><input type="text" id="periodo_rp_${n}" placeholder="Ex: Março 2026" onchange="updateReportePrevioNarrative()"></div></div>`;list.appendChild(div);updateReportePrevioNarrative();}
+function removeReportePrevio(n){const el=document.getElementById('rp-entry-'+n);if(el)el.remove();updateReportePrevioNarrative();}
 function getReportesPrevios(){const entries=[];document.querySelectorAll('.reporte-entry').forEach(el=>{const id=el.id.replace('rp-entry-','');const origem=(document.getElementById('num_origem_'+id)||{}).value||'';const coaf=(document.getElementById('num_coaf_'+id)||{}).value||'';const periodo=(document.getElementById('periodo_rp_'+id)||{}).value||'';if(origem||coaf||periodo)entries.push({origem,coaf,periodo});});return entries;}
+
+function buildReportePrevioSentence(){
+  const val = document.querySelector('input[name="rep_previo"]:checked');
+  if (!val || val.value !== 'si') return null;
+  const reports = getReportesPrevios();
+  if (!reports.length) return null;
+
+  const partes = reports.map(r => {
+    const origem = r.origem || '[NÚMERO DE ORIGEM]';
+    const coaf = r.coaf || '[NÚMERO COAF]';
+    const periodo = r.periodo || '[PERÍODO]';
+    return `Reporte Prévio nº ${origem} (Número COAF da Comunicação ${coaf}), referente ao período de ${periodo}`;
+  });
+  const lista = partes.length === 1
+    ? partes[0]
+    : partes.slice(0, -1).join('; ') + '; e ' + partes[partes.length - 1];
+
+  return `Registra-se, ainda, que o cliente já foi objeto de comunicação prévia ao COAF: ${lista}.`;
+}
+
+// Injects/refreshes the Reporte Prévio sentence as an extra paragraph in the narrative,
+// without disturbing manual edits made elsewhere in the text.
+function updateReportePrevioNarrative(){
+  const ta = document.getElementById('texto_narrativo');
+  if (!ta) return;
+  const marker = /\n*Registra-se, ainda, que o cliente já foi objeto de comunicação prévia ao COAF:[^\n]*\.?/g;
+  let texto = ta.value.replace(marker, '');
+  const sentence = buildReportePrevioSentence();
+  if (sentence) {
+    texto = texto.replace(/\s+$/, '') + '\n\n' + sentence;
+  }
+  ta.value = texto;
+}
 
 // ══════════════════════════════════════════
 // GENERATE DOCUMENTS
