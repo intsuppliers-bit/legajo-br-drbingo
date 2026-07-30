@@ -2484,7 +2484,12 @@ function setDbStatus(state, text) {
 function normalizeId(raw) {
   if (raw === null || raw === undefined || raw === '') return '';
   if (typeof raw === 'number') return String(Math.round(raw));
-  return String(raw).trim().replace(/\.0+$/, '').replace(/,0+$/, '');
+  let s = String(raw).trim();
+  // Strip stray leading apostrophes/quotes that Excel sometimes keeps when a numeric
+  // column was exported/typed as text (e.g. PartyID stored as "'1015873")
+  s = s.replace(/^['"]+/, '').trim();
+  s = s.replace(/\.0+$/, '').replace(/,0+$/, '');
+  return s;
 }
 
 // Normalize date coming from XLSX.js — handles Date objects, Excel serials, and strings
@@ -2594,11 +2599,13 @@ function lookupClient() {
   const idVal = normalizeId(rawInput);
   const cleanDigits = rawInput.replace(/\D/g, '');
 
-  const raw = clientDB.find(c =>
-    c.i === idVal ||
-    c.i === cleanDigits ||
-    c.c === cleanDigits
-  );
+  const raw = clientDB.find(c => {
+    const ciDigits = (c.i || '').replace(/\D/g, '');
+    return c.i === idVal ||
+      c.i === cleanDigits ||
+      (cleanDigits && ciDigits === cleanDigits) ||
+      c.c === cleanDigits;
+  });
 
   if (!raw) {
     document.getElementById('autofill-banner').style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 14px;background:#FFF3EF;border:1px solid #FFB8A0;border-radius:6px;font-size:12.5px;color:#CC3700';
