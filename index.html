@@ -1246,11 +1246,13 @@ function buildAlertasList() {
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 // ── Shared Excel reader ──
-function readWorkbook(file) {
+function readWorkbook(file, opts = {}) {
+  // cellDates:true corrompe columnas numéricas con formato fecha (ej. PartyID) → desactivable
+  const cellDates = opts.cellDates !== false;
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
-      try { resolve(XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true})); }
+      try { resolve(XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates})); }
       catch(err) { reject(err); }
     };
     reader.onerror = reject;
@@ -2558,7 +2560,7 @@ async function loadDatabase(input) {
   input.value = '';
   setDbStatus('loading', 'Lendo arquivo...');
   try {
-    const wb = await readWorkbook(file);
+    const wb = await readWorkbook(file, {cellDates:false});
     setDbStatus('loading', 'Processando registros...');
     await new Promise(r => setTimeout(r, 50)); // allow UI update
 
